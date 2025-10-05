@@ -1,4 +1,5 @@
-//modelo de reserva
+// lib/models/reserva.dart
+
 enum EstadoReserva {
   activa,
   cancelada,
@@ -10,6 +11,8 @@ class Reserva {
   final String idHabitacion;
   final String mailUsuario;
   final String cedulaUsuario;
+  final String nombreUsuario;
+  final int cantidadHuespedes;
   final DateTime fechaIn;
   final DateTime fechaOut;
   final EstadoReserva estado;
@@ -19,21 +22,25 @@ class Reserva {
     required this.idHabitacion,
     required this.mailUsuario,
     required this.cedulaUsuario,
+    required this.nombreUsuario,
+    required this.cantidadHuespedes,
     required this.fechaIn,
     required this.fechaOut,
     this.estado = EstadoReserva.activa,
   });
-
+  
   //constructor desde JSON
   factory Reserva.fromJson(Map<String, dynamic> json) {
     return Reserva(
-      id: json['id'] as String,
-      idHabitacion: json['id_habitacion'] as String,
-      mailUsuario: json['mail_usuario'] as String,
-      cedulaUsuario: json['cedula_usuario'] as String,
-      fechaIn: DateTime.parse(json['fecha_in'] as String),
-      fechaOut: DateTime.parse(json['fecha_out'] as String),
-      estado: _estadoFromString(json['estado'] as String?),
+      id: json['id'],
+      idHabitacion: json['id_habitacion'],
+      mailUsuario: json['mail_usuario'],
+      cedulaUsuario: json['cedula_usuario'],
+      nombreUsuario: json['nombre_usuario'],
+      cantidadHuespedes: json['cantidad_huespedes'],
+      fechaIn: DateTime.parse(json['fecha_in']),
+      fechaOut: DateTime.parse(json['fecha_out']),
+      estado: _estadoFromString(json['estado']),
     );
   }
 
@@ -44,47 +51,30 @@ class Reserva {
       'id_habitacion': idHabitacion,
       'mail_usuario': mailUsuario,
       'cedula_usuario': cedulaUsuario,
+      'nombre_usuario': nombreUsuario,
+      'cantidad_huespedes': cantidadHuespedes,
       'fecha_in': fechaIn.toIso8601String(),
       'fecha_out': fechaOut.toIso8601String(),
       'estado': estado.name
     };
   }
 
-  //este metodo es para convertir string a enum
   static EstadoReserva _estadoFromString(String? estado) {
     switch (estado?.toLowerCase()) {
-      case 'cancelada':
-        return EstadoReserva.cancelada;
-      case 'completada':
-        return EstadoReserva.completada;
-      case 'activa':
-      default:
-        return EstadoReserva.activa;
+      case 'cancelada': return EstadoReserva.cancelada;
+      case 'completada': return EstadoReserva.completada;
+      case 'activa': default: return EstadoReserva.activa;
     }
   }
 
-  //calcula cantidad de noches
-  int get cantidadNoches {
-    return fechaOut.difference(fechaIn).inDays;
-  }
-
-  //verifica si la reserva está activa
+  int get cantidadNoches => fechaOut.difference(fechaIn).inDays;
   bool get estaActiva => estado == EstadoReserva.activa;
-
-  //verifica si la reserva ya pasó
   bool get yaPaso => DateTime.now().isAfter(fechaOut);
 
   @override
-  String toString() {
-    return 'Reserva{id: $id, habitacion: $idHabitacion, usuario: $mailUsuario, fechaIn: $fechaIn, fechaOut: $fechaOut, estado: $estado}';
-  }
-
+  String toString() => 'Reserva{id: $id, habitacion: $idHabitacion, usuario: $nombreUsuario}';
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Reserva && other.id == id;
-  }
-
+  bool operator ==(Object other) => identical(this, other) || other is Reserva && other.id == id;
   @override
   int get hashCode => id.hashCode;
 }
