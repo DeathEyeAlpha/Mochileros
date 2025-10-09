@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
       // home: const AdminHomeScreen(),
 
       // Opción 3: Iniciar en la pantalla para reservar
-      home: const ReservarScreen(),
+      home: const Home(),
     );
   }
 }
