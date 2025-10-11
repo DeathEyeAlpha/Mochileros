@@ -121,7 +121,7 @@ class _VerReservasScreenState extends State<VerReservasScreen> {
                 _buildInfoColumn('Cant. Huespedes:', reserva.cantidadHuespedes.toString()),
                 IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  onPressed: () => _eliminarReserva(reserva.id),
+                  onPressed: () => _eliminarReserva(reserva.id as String),
                 ),
               ],
             ),

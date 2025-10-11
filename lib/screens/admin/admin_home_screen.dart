@@ -52,7 +52,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
       } else {
         _habitacionesFiltradas = _todasLasHabitaciones
             .where((habitacion) =>
-                habitacion.id.toLowerCase().contains(query.toLowerCase()) ||
+                habitacion.numero.toString().contains(query.toLowerCase()) ||
                 habitacion.nombre.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
@@ -254,7 +254,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _mostrarDialogoEliminar(habitacion.id, habitacion.nombre),
+                  onPressed: () => _mostrarDialogoEliminar(habitacion.numero as String, habitacion.nombre),
                   icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 28),
                 ),
               ],

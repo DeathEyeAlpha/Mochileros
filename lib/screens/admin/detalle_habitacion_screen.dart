@@ -121,7 +121,7 @@ class _DetalleHabitacionScreenState extends State<DetalleHabitacionScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => VerReservasScreen(idHabitacion: widget.habitacion.id),
+                      builder: (context) => VerReservasScreen(idHabitacion: widget.habitacion.numero as String),
                     ),
                   );
                 },

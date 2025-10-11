@@ -41,7 +41,7 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
     if (_formKey.currentState!.validate()) {
       //creamos un objeto Habitacion con los datos del formulario
       final nuevaHabitacion = Habitacion(
-        id: '', //el ID real será asignado por el servicio
+        numero: 0, //el ID real será asignado por el servicio
         nombre: _tituloController.text,
         precio: double.parse(_precioController.text),
         descripcion: _descripcionController.text,

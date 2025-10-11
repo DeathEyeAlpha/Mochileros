@@ -54,7 +54,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     //combinamos los datos
     for (final reserva in misReservas) {
       final habitacionCorrespondiente = todasLasHabitaciones.firstWhere(
-        (hab) => hab.id == reserva.idHabitacion,
+        (hab) => hab.numero == reserva.idHabitacion,
       );
       datosCombinados.add(ReservaConHabitacion(
         reserva: reserva,
@@ -181,7 +181,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => _mostrarDialogoCancelar(datos.reserva.id, datos.habitacion.nombre),
+                      onPressed: () => _mostrarDialogoCancelar(datos.reserva.id as String, datos.habitacion.nombre),
                       icon: const Icon(Icons.cancel, color: Colors.white),
                       label: const Text('Cancelar'),
                       style: ElevatedButton.styleFrom(

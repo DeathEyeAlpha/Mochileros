@@ -1,7 +1,7 @@
 // lib/models/habitacion.dart
 
 class Habitacion {
-  final String id;
+  final int numero;
   final String nombre;
   final int reservas;
   final List<String> imagenes;
@@ -14,7 +14,7 @@ class Habitacion {
   final bool? disponible; 
 
   Habitacion({
-    required this.id,
+    required this.numero,
     required this.nombre,
     this.reservas = 0, //una habitación nueva no tiene reservas
     required this.imagenes,
@@ -28,37 +28,57 @@ class Habitacion {
   });
 
   //aun no lo usamos, pero es bueno tenerlo para el futuro
-  factory Habitacion.fromJson(Map<String, dynamic> json) {
-    return Habitacion(
-      id: json['id'],
-      nombre: json['nombre'],
-      reservas: json['reservas'],
-      //esto se asegura que se lean las imagenes como lista de strings
-      imagenes: List<String>.from(json['imagenes']), 
-      cuartos: json['cuartos'],
-      camas: json['camas'],
-      televisores: json['televisores'],
-      banos: json['banos'],
-      precio: (json['precio'] as num).toDouble(),
-      descripcion: json['descripcion'],
-      disponible: json['disponible'],
-    );
+ factory Habitacion.fromJson(Map<String, dynamic> json) {
+  // Ej.: {numero:1, televisores:2, camas:3, baños:4, descripcion:"...", imagen:"https://...", nombre:null, cuartos:1, precio:null}
+
+  // imagen puede venir como String, List o null -> convertir siempre a List<String>
+  List<String> _parseImagenes(dynamic v) {
+    if (v == null) return <String>[];
+    if (v is List) return v.map((e) => e.toString()).toList();
+    return [v.toString()]; // venía un solo string
   }
+
+  double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
+  }
+
+  int _parseInt(dynamic v) {
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
+  }
+
+  return Habitacion(
+    numero:      _parseInt(json['numero']),
+    nombre:      (json['nombre'] ?? '').toString(),
+    reservas:    _parseInt(json['reservas']),      // si tu RPC no lo devuelve, quedará 0
+    imagenes:    _parseImagenes(json['imagen']),
+    cuartos:     _parseInt(json['cuartos']),
+    camas:       _parseInt(json['camas']),
+    televisores: _parseInt(json['televisores']),
+    banos:       _parseInt(json['baños']),         // ojo con la tilde: la clave es 'baños'
+    precio:      _parseDouble(json['precio']),
+    descripcion: (json['descripcion'] ?? '').toString(),
+    disponible:  json['disponible'] == true || json['disponible'] == 1,
+  );
+}
 
   //convertir el objeto a un mapa, útil para enviar a una base de datos
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'nombre': nombre,
-      'reservas': reservas,
-      'imagenes': imagenes,
-      'cuartos': cuartos,
-      'camas': camas,
-      'televisores': televisores,
-      'banos': banos,
-      'precio': precio,
-      'descripcion': descripcion,
-      'disponible': disponible,
+      'Numero': numero,
+      'Nombre': nombre,
+      'Reservas': reservas,
+      'Imagenes': imagenes,
+      'Cuartos': cuartos,
+      'Camas': camas,
+      'Televisores': televisores,
+      'Baños': banos,
+      'Precio': precio,
+      'Descripcion': descripcion,
+      'Disponible': disponible,
     };
   }
 
@@ -76,7 +96,7 @@ class Habitacion {
     bool? disponible,
   }) {
     return Habitacion(
-      id: id ?? this.id,
+      numero: numero ?? this.numero,
       nombre: nombre ?? this.nombre,
       reservas: reservas ?? this.reservas,
       imagenes: imagenes ?? this.imagenes,
