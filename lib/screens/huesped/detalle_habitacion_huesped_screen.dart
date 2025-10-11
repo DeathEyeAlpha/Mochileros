@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import '../../models/habitacion.dart';
 
 class DetalleHabitacionHuespedScreen extends StatefulWidget {
-  final Habitacion habitacion;
-  const DetalleHabitacionHuespedScreen({Key? key, required this.habitacion}) : super(key: key);
+  final dynamic habitacion;
+  const DetalleHabitacionHuespedScreen({Key? key, this.habitacion}) : super(key: key);
 
   @override
   State<DetalleHabitacionHuespedScreen> createState() => _DetalleHabitacionHuespedScreenState();
@@ -16,7 +16,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
 
   @override
   Widget build(BuildContext context) {
-    final imagenes = widget.habitacion.imagenes;
+    final imagenes = widget.habitacion['imagen'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -32,9 +32,9 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.habitacion.nombre, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(widget.habitacion['nombre'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('US\$ ${widget.habitacion.precio.toStringAsFixed(2)} por noche', style: const TextStyle(fontSize: 16, color: Colors.teal)),
+            Text('US\$ ${widget.habitacion['precio'].toStringAsFixed(2)} por noche', style: const TextStyle(fontSize: 16, color: Colors.teal)),
             const SizedBox(height: 16),
 
             //carrusel de imagenes
@@ -44,7 +44,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: Image.network(
-                    imagenes[_currentImageIndex],
+                    imagenes,
                     height: 250,
                     width: double.infinity,
                     fit: BoxFit.cover,
@@ -55,7 +55,6 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
                   child: IconButton(
                     onPressed: () {
                       setState(() {
-                        _currentImageIndex = (_currentImageIndex - 1 + imagenes.length) % imagenes.length;
                       });
                     },
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white70),
@@ -67,7 +66,6 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
                   child: IconButton(
                     onPressed: () {
                       setState(() {
-                        _currentImageIndex = (_currentImageIndex + 1) % imagenes.length;
                       });
                     },
                     icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70),
@@ -82,7 +80,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
             const Text('Esta habitación incluye:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              '${widget.habitacion.banos} baño(s)\n${widget.habitacion.camas} cama(s)\n${widget.habitacion.descripcion}',
+              '${widget.habitacion['baños']} baño(s)\n${widget.habitacion['camas']} cama(s)\n${widget.habitacion['descripcion']}',
               style: const TextStyle(fontSize: 16, height: 1.5),
             ),
             

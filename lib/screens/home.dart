@@ -28,8 +28,35 @@ class _HomeState extends State<Home> {
     _authSubscription.listen((data) async {
       final event = data.event;
       final session = data.session;
-      
-      Future<bool> esAdmin(correo) async {
+
+      if (event == AuthChangeEvent.signedIn) {
+        debugPrint('Usuario ha iniciado sesión: ${session?.user.email}');
+        final isadmin = await esAdmin(session?.user.email);
+        if(isadmin){
+          setState(() {
+            logueado = true;
+            admin = true;
+                  debugPrint('Logueado: $logueado, Admin: $admin');
+
+          });
+        }else{
+        setState(() {
+                
+          logueado = true;
+          debugPrint('Logueado: $logueado, Admin: $admin');
+        });
+      }
+        // 🔄 fuerza el rebuild, mostrando la UI de usuario logueado
+      } else if (event == AuthChangeEvent.signedOut) {
+        setState(() {
+          logueado = false;
+        }); // 🔄 vuelve a la UI de usuario no logueado
+      }
+      debugPrint('Evento auth: $event, usuario: ${session?.user?.email}');
+    });
+  }
+
+ Future<bool> esAdmin(correo) async {
   final supabase = Supabase.instance.client;
   
   if (correo == null) return false;
@@ -43,31 +70,6 @@ class _HomeState extends State<Home> {
   if (data == null) return false;
   return data['Admin'] == true;
 }
-
-      if (event == AuthChangeEvent.signedIn) {
-        final isadmin = await esAdmin(session?.user.email);
-        if(isadmin){
-          setState(() {
-            logueado = true;
-            admin = true;
-          });
-        }else{
-        setState(() {
-          logueado = true;
-        });
-      }
-        // 🔄 fuerza el rebuild, mostrando la UI de usuario logueado
-      } else if (event == AuthChangeEvent.signedOut) {
-        setState(() {
-          logueado = false;
-        }); // 🔄 vuelve a la UI de usuario no logueado
-      }
-
-      debugPrint('Evento auth: $event, usuario: ${session?.user?.email}');
-    });
-  }
-
-
   
 
   @override

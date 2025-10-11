@@ -1,6 +1,7 @@
 // lib/screens/admin/admin_home_screen.dart
 
 import 'package:flutter/material.dart';
+import '../../main.dart';
 import '/models/habitacion.dart';
 import '/services/interfaces/i_habitacion_service.dart';
 import '/services/implementacion/habitacion_service.dart';
@@ -21,9 +22,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   //variables para manejar el estado de los datos
-  late Future<List<Habitacion>> _futureHabitaciones;
-  List<Habitacion> _todasLasHabitaciones = [];
-  List<Habitacion> _habitacionesFiltradas = [];
+  late Future<List<dynamic>> _futureHabitaciones;
+  List<dynamic> _todasLasHabitaciones = [];
+  List<dynamic> _habitacionesFiltradas = [];
 
   @override
   void initState() {
@@ -32,11 +33,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   }
 
   //metodo para cargar los datos desde el servicio
-  void _cargarDatos() {
-    setState(() {
-      _futureHabitaciones = _habitacionService.listarHabitaciones();
-    });
-  }
+  Future<dynamic> _cargarDatos() async {
+   _futureHabitaciones = supabase
+    .from('Habitacion')
+    .select();
+}
 
   @override
   void dispose() {
@@ -92,8 +93,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
+                await Future.delayed(const Duration(milliseconds: 200));
                 _eliminarHabitacion(id);
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -165,7 +167,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
           //se usa un FutureBuilder para manejar la carga de datos
           Expanded(
-            child: FutureBuilder<List<Habitacion>>(
+            child: FutureBuilder<List<dynamic>>(
               future: _futureHabitaciones,
               builder: (context, snapshot) {
                 //estado de carga
@@ -212,7 +214,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
-  Widget _buildHabitacionCard(Habitacion habitacion) {
+  Widget _buildHabitacionCard(dynamic habitacion) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -231,7 +233,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 topRight: Radius.circular(15),
               ),
               child: Image.network(
-                habitacion.imagenes.isNotEmpty ? habitacion.imagenes[0] : 'https://via.placeholder.com/400x200',
+                habitacion.imagen.isNotEmpty ? habitacion.imagen : 'https://via.placeholder.com/400x200',
                 height: 150,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -247,9 +249,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(habitacion.nombre, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(habitacion['nombre'], style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text('Reservas ${habitacion.reservas}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                      Text('Reservas ${habitacion['numero']}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                     ],
                   ),
                 ),
