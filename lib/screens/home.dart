@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
 import 'package:mochileros/screens/admin/admin_home_screen.dart';
 import 'package:mochileros/screens/huesped/login.dart';
 import 'package:mochileros/screens/huesped/registro.dart';
@@ -6,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mochileros/screens/huesped/mis_reservas_screen.dart';
 import 'package:mochileros/screens/huesped/reservar_screen.dart';
 
-final supabase = Supabase.instance.client;
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -57,7 +58,7 @@ class _HomeState extends State<Home> {
   }
 
  Future<bool> esAdmin(correo) async {
-  final supabase = Supabase.instance.client;
+  
   
   if (correo == null) return false;
 
@@ -75,13 +76,13 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-    if(admin && logueado){
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
-        );
-      
-    }
+   if (admin && logueado) {
+    Future.microtask(() {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+      );
+    });
+  }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

@@ -80,7 +80,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
             const Text('Esta habitación incluye:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              '${widget.habitacion['baños']} baño(s)\n${widget.habitacion['camas']} cama(s)\n${widget.habitacion['descripcion']}',
+              '${widget.habitacion['baños']} baño(s)\n${widget.habitacion['camas']} cama(s)\n${widget.habitacion['televisores']} televisores(s)\n${widget.habitacion['cuartos']} cuartos(s)\n${widget.habitacion['descripcion']}',
               style: const TextStyle(fontSize: 16, height: 1.5),
             ),
             

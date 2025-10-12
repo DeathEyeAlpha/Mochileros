@@ -1,6 +1,7 @@
 // lib/screens/admin/crear_habitacion_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
 import '../../models/habitacion.dart';
 import '../../services/interfaces/i_habitacion_service.dart';
 import '../../services/implementacion/habitacion_service.dart';
@@ -54,21 +55,42 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
       );
 
       //llamamos al servicio para crear la habitación
-      final bool exito = await _habitacionService.crearHabitacion(nuevaHabitacion);
+      try{
+      await supabase
+        .from('Habitacion')
+        .insert({
+          'Nombre': nuevaHabitacion.nombre,
+          'Precio': nuevaHabitacion.precio,
+          'Descripcion': nuevaHabitacion.descripcion,
+          'Cuartos': nuevaHabitacion.cuartos,
+          'Camas': nuevaHabitacion.camas,
+          'Televisores': nuevaHabitacion.televisores,
+          'Baños': nuevaHabitacion.banos,
+        });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(
-            content: Text(exito ? 'Habitación creada exitosamente' : 'Error al crear la habitación'),
-            backgroundColor: exito ? Colors.green : Colors.red,
+            content: Text( 'Habitación creada exitosamente'),
+            backgroundColor: Colors.green,
           ),
         );
-
-        if (exito) {
-          //si fue exitoso cerramos la pantalla y devolvemos true
-          Navigator.pop(context, true);
         }
-      }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error al crear la habitación: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+        
+          
+        
+      
     }
   }
 
@@ -230,13 +252,11 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
         title: const Text('Crear Habitación', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.black), onPressed: () {}),
-        ],
+        
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
