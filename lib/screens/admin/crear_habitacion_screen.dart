@@ -1,5 +1,7 @@
 // lib/screens/admin/crear_habitacion_screen.dart
 
+
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mochileros/main.dart';
 import '../../models/habitacion.dart';
@@ -8,12 +10,18 @@ import '../../services/implementacion/habitacion_service.dart';
 
 class CrearHabitacionScreen extends StatefulWidget {
   const CrearHabitacionScreen({Key? key}) : super(key: key);
-
+  
   @override
   State<CrearHabitacionScreen> createState() => _CrearHabitacionScreenState();
 }
 
 class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
+  List<String> imagenes = [
+    'https://ba-h.com.ar/wp-content/uploads/2018/10/10-ventajas-alojarse-hostel_2.jpg',
+    'https://lh6.googleusercontent.com/proxy/M1A6uvYwv-9p8t8ulaNwVce8brFiothPnBxaq0N9f8JUNP4BHP2FVBiph3NqtiyFWNaP3CNgm93pyJzBzNhvjrHqZAbZzVWYN2jk3hJlomWwpfq0',
+    'https://upload.wikimedia.org/wikipedia/commons/e/e8/Hostel_Dormitory.jpg',
+    'https://www.latroupe.com/content/imgsxml/textos_internos/a_shared_dormitory_in_a_modern_hostel_featuring_b.jpg',
+  ];
   //instancia del servicio
   final IHabitacionService _habitacionService = HabitacionService();
   final _formKey = GlobalKey<FormState>();
@@ -51,7 +59,7 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
         televisores: _cantidadTelevisores,
         banos: _cantidadBanos,
         //por ahora una imagen de placeholder, la logica para subir imagenes es mas compleja
-        imagenes: ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800'], 
+        imagenes: imagenes, 
       );
 
       //llamamos al servicio para crear la habitación
@@ -66,6 +74,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
           'Camas': nuevaHabitacion.camas,
           'Televisores': nuevaHabitacion.televisores,
           'Baños': nuevaHabitacion.banos,
+          'Imagen': nuevaHabitacion.imagenes.elementAt(Random().nextInt(nuevaHabitacion.imagenes.length)),
+          'Servicios': _serviciosSeleccionados,
         });
 
       if (mounted) {

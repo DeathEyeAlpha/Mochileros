@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:mochileros/main.dart';
+import 'package:mochileros/screens/huesped/detalle_reserva_habitacion.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/habitacion.dart';
 import '../../models/reserva.dart';
@@ -140,7 +141,7 @@ return resp;
     );
   }
 
-  Widget _buildReservaCard(datos) {
+  Widget _buildReservaCard(dynamic datos) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -169,7 +170,7 @@ return resp;
                     OutlinedButton.icon(
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => DetalleHabitacionHuespedScreen(habitacion: datos)
+                          builder: (context) => DetalleReservaHuespedScreen(habitacion: datos)
                         ));
                       },
                       icon: const Icon(Icons.visibility),
