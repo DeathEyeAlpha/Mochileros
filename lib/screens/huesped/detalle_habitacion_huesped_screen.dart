@@ -16,7 +16,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
 
   @override
   Widget build(BuildContext context) {
-    final imagenes = widget.habitacion['imagen'];
+    final imagenes = widget.habitacion.imagenes.first ?? '';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -32,9 +32,9 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.habitacion['nombre'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(widget.habitacion.nombre, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('US\$ ${widget.habitacion['precio'].toStringAsFixed(2)} por noche', style: const TextStyle(fontSize: 16, color: Colors.teal)),
+            Text('US\$ ${widget.habitacion.precio.toStringAsFixed(2)} por noche', style: const TextStyle(fontSize: 16, color: Colors.teal)),
             const SizedBox(height: 16),
 
             //carrusel de imagenes
@@ -80,7 +80,7 @@ class _DetalleHabitacionHuespedScreenState extends State<DetalleHabitacionHuespe
             const Text('Esta habitación incluye:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(
-              '${widget.habitacion['baños']} baño(s)\n${widget.habitacion['camas']} cama(s)\n${widget.habitacion['televisores']} televisores(s)\n${widget.habitacion['cuartos']} cuartos(s)\n${widget.habitacion['descripcion']}',
+              '${widget.habitacion.banos} baño(s)\n${widget.habitacion.camas} cama(s)\n${widget.habitacion.televisores} televisores(s)\n${widget.habitacion.cuartos} cuartos(s)\n${widget.habitacion.descripcion}',
               style: const TextStyle(fontSize: 16, height: 1.5),
             ),
             

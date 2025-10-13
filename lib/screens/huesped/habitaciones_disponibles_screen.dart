@@ -58,7 +58,7 @@ return habitaciones;
   }
 
   //funcion para navegar a la pantalla de detalle
-  void _verDetalle(Habitacion habitacion) {
+  void _verDetalle(dynamic habitacion) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -169,7 +169,7 @@ return habitaciones;
     );
   }
 
-  Widget _buildHabitacionCard(Habitacion habitacion) {
+  Widget _buildHabitacionCard(dynamic habitacion) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

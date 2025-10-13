@@ -91,8 +91,8 @@ class _HomeState extends State<Home> {
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(
-            backgroundColor: const Color(0xFF6B5FB5),
-            child: const Icon(Icons.person, color: Colors.white),
+            backgroundColor: Colors.white,
+            child: Image.asset('images/Logo.png', fit: BoxFit.cover),
           ),
         ),
         title: const Text('Mochileros', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
