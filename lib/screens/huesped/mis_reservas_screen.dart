@@ -1,5 +1,6 @@
 // lib/screens/huesped/mis_reservas_screen.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mochileros/main.dart';
 import 'package:mochileros/screens/huesped/detalle_reserva_habitacion.dart';
@@ -36,6 +37,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
   void initState() {
     super.initState();
     _cargarMisReservas();
+    
   }
 
   void _cargarMisReservas() {
@@ -60,6 +62,7 @@ return resp;
   }
   
   void _cancelarReserva(int idReserva) async {
+    
     bool exito = false;
     try{
     await supabase.from('Reserva').delete().eq('id', idReserva);
@@ -162,8 +165,21 @@ return resp;
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(datos['nombre'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(datos['nombre'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    
+                        Row(
+                          children: [
+                            Text('Checkin: ${datos['checkin']}',style: const TextStyle(fontSize: 16)),
+                            Spacer(),
+                            Text('Checkout: ${datos['checkout']}',style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                     
+                  
+                
                 const SizedBox(height: 16),
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [

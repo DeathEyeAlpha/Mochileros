@@ -27,6 +27,21 @@ class _LoginState extends State<Login> {
       );
 
       if (res.user != null) {
+        try {
+  final usuarioEstaenTabla = await Supabase.instance.client
+      .from('Usuario')
+      .select()
+      .eq('Correo', _emailController.text.trim())
+      .single();
+  // Si llega aquí, el usuario existe
+} catch (e) {
+  // Si hay error, probablemente es porque no existe el usuario
+  await Supabase.instance.client.from('Usuario').insert({
+    'Correo': _emailController.text.trim(),
+    // Agrega otros campos necesarios aquí
+  });
+  return;
+}
         // Si el login fue exitoso, cerramos el diálogo
         if (!mounted) return;
         Navigator.pop(context);
