@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
+import 'package:mochileros/screens/admin/admin_home_screen.dart';
+import 'package:mochileros/screens/huesped/login.dart';
+import 'package:mochileros/screens/huesped/registro.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mochileros/screens/huesped/mis_reservas_screen.dart';
 import 'package:mochileros/screens/huesped/reservar_screen.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -12,10 +17,73 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  late final Stream<AuthState> _authSubscription;
+  bool logueado = false;
+  bool admin = false;
+  @override
+  void  initState() {
+    super.initState();
+
+    // 🧠 Escucha cualquier cambio de sesión
+    _authSubscription = supabase.auth.onAuthStateChange;
+    _authSubscription.listen((data) async {
+      final event = data.event;
+      final session = data.session;
+
+      if (event == AuthChangeEvent.signedIn) {
+        debugPrint('Usuario ha iniciado sesión: ${session?.user.email}');
+        final isadmin = await esAdmin(session?.user.email);
+        if(isadmin){
+          setState(() {
+            logueado = true;
+            admin = true;
+                  debugPrint('Logueado: $logueado, Admin: $admin');
+
+          });
+        }else{
+        setState(() {
+                
+          logueado = true;
+          debugPrint('Logueado: $logueado, Admin: $admin');
+        });
+      }
+        // 🔄 fuerza el rebuild, mostrando la UI de usuario logueado
+      } else if (event == AuthChangeEvent.signedOut) {
+        setState(() {
+          logueado = false;
+        }); // 🔄 vuelve a la UI de usuario no logueado
+      }
+      debugPrint('Evento auth: $event, usuario: ${session?.user?.email}');
+    });
+  }
+
+ Future<bool> esAdmin(correo) async {
+  
+  
+  if (correo == null) return false;
+
+  final data = await supabase
+      .from('Usuario')
+      .select('Admin')
+      .eq('Correo', correo)
+      .maybeSingle();
+
+  if (data == null) return false;
+  return data['Admin'] == true;
+}
+  
+
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
-
+    Future.delayed(Duration(seconds: 10));
+   if (admin && logueado) {
+    Future.microtask(() {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+      );
+    });
+  }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -24,8 +92,8 @@ class _HomeState extends State<Home> {
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(
-            backgroundColor: const Color(0xFF6B5FB5),
-            child: const Icon(Icons.person, color: Colors.white),
+            backgroundColor: Colors.white,
+            child: Image.asset('images/Logo.png', fit: BoxFit.cover),
           ),
         ),
         title: const Text('Mochileros', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
@@ -55,13 +123,13 @@ class _HomeState extends State<Home> {
                 Navigator.pop(context); // cierra el Drawer
               },
             ),
-            if (user == null) ...[
+            if (!logueado) ...[
               ListTile(
                 leading: const Icon(Icons.login),
                 title: const Text('Iniciar Sesion'),
                 onTap: () {
                   //Aqui va el screen para iniciar sesion
-                  Navigator.pop(context);
+                  mostrarLogin(context);
                 },
               ),
               ListTile(
@@ -69,7 +137,7 @@ class _HomeState extends State<Home> {
                 title: const Text('Crear Cuenta'),
                 onTap: () {
                   //Aqui va el screen para crear una cuenta
-                  Navigator.pop(context);
+                  mostrarRegistro(context);
                 },
               )
             ] else ...[
@@ -124,7 +192,7 @@ class _HomeState extends State<Home> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Image.asset('assets/images/VistaPrincipal.jpg', width: double.infinity, height: 200, fit: BoxFit.cover),
+              Image.asset('images/VistaPrincipal.jpg', width: double.infinity, height: 200, fit: BoxFit.cover),
               const SizedBox(height: 8),
               const Text(
                 'Esta es la entrada principal de nuestro Hostel, rodeado de plantas naturales que acompañan bien con una hermosa iluminacion en las mañanas. Ademas, contamos con un pequeño estacionamiento alojado cerca de la entrada en caso de necesitar un lugar donde depositar sus vehiculos ',
@@ -132,7 +200,7 @@ class _HomeState extends State<Home> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              Image.asset('assets/images/Secundaria.jpg', width: double.infinity, height: 200, fit: BoxFit.cover),
+              Image.asset('images/Secundaria.jpg', width: double.infinity, height: 200, fit: BoxFit.cover),
               const SizedBox(height: 8),
               const Text(
                 'Una vista previa a nuestra sala exterior. Donde premiamos la comunicacion y reflexion con los distintos viajantes acompañados de un hermoso paisaje rodeado de plantas naturales. Contamos con una piscina exterior extensa y un un mini bar a pocos metros.',
@@ -181,4 +249,20 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
+  void mostrarLogin(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: true, 
+    builder: (_) => const Login(),
+  );
+}
+
+ void mostrarRegistro(BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: true, 
+    builder: (_) => const Registro(),
+  );
+}
 }

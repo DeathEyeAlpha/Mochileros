@@ -1,6 +1,9 @@
 // lib/screens/admin/admin_home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:mochileros/screens/admin/admin_ver_reservas_screen.dart';
+
+import '../../main.dart';
 import '/models/habitacion.dart';
 import '/services/interfaces/i_habitacion_service.dart';
 import '/services/implementacion/habitacion_service.dart';
@@ -17,13 +20,7 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   //instancia del servicio de habitaciones
-  final IHabitacionService _habitacionService = HabitacionService();
-  final TextEditingController _searchController = TextEditingController();
-
-  //variables para manejar el estado de los datos
-  late Future<List<Habitacion>> _futureHabitaciones;
-  List<Habitacion> _todasLasHabitaciones = [];
-  List<Habitacion> _habitacionesFiltradas = [];
+  late Future<List<dynamic>> _futureHabitaciones;
 
   @override
   void initState() {
@@ -31,237 +28,201 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     _cargarDatos();
   }
 
-  //metodo para cargar los datos desde el servicio
-  void _cargarDatos() {
-    setState(() {
-      _futureHabitaciones = _habitacionService.listarHabitaciones();
-    });
-  }
+  void salir() async {
+  try {
+    await supabase.auth.signOut();
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  //logica de búsqueda adaptada al modelo Habitacion
-  void _buscarHabitacion(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _habitacionesFiltradas = List.from(_todasLasHabitaciones);
-      } else {
-        _habitacionesFiltradas = _todasLasHabitaciones
-            .where((habitacion) =>
-                habitacion.id.toLowerCase().contains(query.toLowerCase()) ||
-                habitacion.nombre.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-  }
-
-  //logica de eliminación usando el servicio
-  void _eliminarHabitacion(String id) async {
-    final bool exito = await _habitacionService.eliminarHabitacion(id);
-    
-    if (mounted) { //verifica si el widget sigue en pantalla, aparentemente evita errores
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(exito ? 'Habitación eliminada exitosamente' : 'Error al eliminar'),
-          backgroundColor: exito ? Colors.green : Colors.red,
-        ),
+    // Navegar a la pantalla principal (por ejemplo LoginScreen o Home)
+    if (context.mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const MyApp()),
+        (route) => false, // elimina todas las pantallas anteriores
       );
-
-      if (exito) {
-        //si se eliminó con éxito, volvemos a cargar los datos
-        _cargarDatos();
-      }
     }
-  }
 
-  void _mostrarDialogoEliminar(String id, String nombre) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: const Text('Confirmar eliminación', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('¿Está seguro que desea eliminar "$nombre"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _eliminarHabitacion(id);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
+    debugPrint('✅ Sesión cerrada correctamente');
+  } catch (e) {
+    debugPrint('❌ Error al cerrar sesión: $e');
   }
+}
 
-  //navegación a la pantalla de crear
-  void _navegarACrearHabitacion() async {
-    //esperamos un resultado de la pantalla de creación
-    final resultado = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CrearHabitacionScreen()),
-    );
-    //su el resultado es true significa que se creó una habitación y recargamos la lista
-    if (resultado == true) {
-      _cargarDatos();
-    }
-  }
+  Future<void> _cargarDatos() async {
+    final response = await supabase.from('Habitacion').select();
+    debugPrint('🟢 Respuesta Supabase: $response');
 
-  //nvegación a la pantalla de detalle
-  void _verDetalleHabitacion(Habitacion habitacion) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DetalleHabitacionScreen(habitacion: habitacion),
-      ),
-    );
+    setState(() {
+      _futureHabitaciones = Future.value(response);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F6FB),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: const Color(0xFF6B5FB5),
-            child: const Icon(Icons.person, color: Colors.white),
-          ),
+        title: const Text('Habitaciones'),
+        backgroundColor: const Color(0xFF6B5FB5),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: salir,
         ),
-        title: const Text('Administrador', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.black), onPressed: () {}),
-        ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _buscarHabitacion,
-              decoration: InputDecoration(
-                hintText: 'Buscar por ID o nombre...',
-                filled: true,
-                fillColor: const Color(0xFFE8E5F0),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                suffixIcon: const Icon(Icons.search, color: Colors.grey),
-              ),
-            ),
-          ),
-          //se usa un FutureBuilder para manejar la carga de datos
-          Expanded(
-            child: FutureBuilder<List<Habitacion>>(
-              future: _futureHabitaciones,
-              builder: (context, snapshot) {
-                //estado de carga
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                //estado de error
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error al cargar los datos: ${snapshot.error}'));
-                }
-                //datos cargados exitosamente
-                if (snapshot.hasData) {
-                  _todasLasHabitaciones = snapshot.data!;
-                  //si es la primera vez que cargamos, poblamos la lista filtrada
-                  if (_habitacionesFiltradas.isEmpty && _searchController.text.isEmpty) {
-                     _habitacionesFiltradas = List.from(_todasLasHabitaciones);
-                  }
+      body: FutureBuilder<List<dynamic>>(
+        future: _futureHabitaciones,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                  if (_habitacionesFiltradas.isEmpty) {
-                    return const Center(child: Text('No se encontraron habitaciones.'));
-                  }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error al cargar: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No hay habitaciones disponibles.'));
+          }
+
+          final habitaciones = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: habitaciones.length,
+            itemBuilder: (context, index) {
+              final habitacion = habitaciones[index];
+              final numero = habitacion['Numero'] ?? 0;
+              final nombre = habitacion['Nombre'] ?? 'Sin nombre';
+              final precio = habitacion['Precio'] ?? 0;
+              final imagen = habitacion['Imagen'] ?? '';
+
+              return GestureDetector(
+                onTap: () {
+                  // Abrir pantalla de detalle con todos los datos
                   
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _habitacionesFiltradas.length,
-                    itemBuilder: (context, index) {
-                      final habitacion = _habitacionesFiltradas[index];
-                      return _buildHabitacionCard(habitacion);
-                    },
-                  );
-                }
-                //estado por defecto
-                return const Center(child: Text('No hay habitaciones.'));
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navegarACrearHabitacion,
-        backgroundColor: const Color(0xFFD4C5F9),
-        child: const Icon(Icons.add, color: Color(0xFF6B5FB5), size: 32),
-      ),
-    );
-  }
-
-  Widget _buildHabitacionCard(Habitacion habitacion) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 5)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: () => _verDetalleHabitacion(habitacion),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(15),
-                topRight: Radius.circular(15),
-              ),
-              child: Image.network(
-                habitacion.imagenes.isNotEmpty ? habitacion.imagenes[0] : 'https://via.placeholder.com/400x200',
-                height: 150,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey[200]),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetalleHabitacionScreen(
+                          habitacion: habitacion,
+                        ),
+                      ),
+                    );
+                  
+                },
+                child: Card(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(habitacion.nombre, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text('Reservas ${habitacion.reservas}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                      // Imagen superior
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
+                        ),
+                        child: Image.network(
+                          imagen.isNotEmpty
+                              ? imagen
+                              : 'https://via.placeholder.com/400x200.png?text=Sin+imagen',
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(height: 180, color: Colors.grey[300]),
+                        ),
+                      ),
+                      // Información de la habitación
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    nombre,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '\$${precio.toString()} USD / noche',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF6B5FB5),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Botón Ver Reservas
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => VerReservasScreen(numero: numero,nombre: nombre),
+                                    ),
+                                  );
+                                
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6B5FB5),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                              ),
+                              icon: const Icon(Icons.list_alt, size: 20, color: Colors.white),
+                              label: const Text(
+                                'Ver reservas',
+                                style: TextStyle(color: Colors.white, fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _mostrarDialogoEliminar(habitacion.id, habitacion.nombre),
-                  icon: const Icon(Icons.delete_outline, color: Colors.grey, size: 28),
-                ),
-              ],
-            ),
-          ),
-        ],
+              );
+            },
+          );
+        },
       ),
+      floatingActionButton: ElevatedButton(
+    onPressed: () async {
+      final resultado = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CrearHabitacionScreen()),
+      );
+      if (resultado == true) {
+    _cargarDatos(); // recarga la lista
+  }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      shape: const CircleBorder(),
+      padding: const EdgeInsets.all(18),
+      elevation: 6,
+    ),
+    child: const Icon(
+      Icons.add,
+      color: Colors.white,
+      size: 30,
+    ),
+  ),
     );
   }
 }

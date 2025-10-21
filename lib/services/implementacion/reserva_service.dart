@@ -9,7 +9,7 @@ class ReservaService implements IReservaService {
   //simulamos nuestra base de datos de reservas, BORRAR LUEGO
   static final List<Reserva> _reservas = [
     Reserva(
-      id: 'res1',
+      id: 0,
       idHabitacion: '1', 
       nombreUsuario: 'Michael Jackson',
       cedulaUsuario: '53206367',
@@ -20,7 +20,7 @@ class ReservaService implements IReservaService {
       fechaOut: DateTime(2025, 8, 25),
     ),
     Reserva(
-      id: 'res2',
+      id: 1,
       idHabitacion: '1',
       nombreUsuario: 'Freddie Mercury',
       cedulaUsuario: '12345678',
@@ -30,7 +30,7 @@ class ReservaService implements IReservaService {
       fechaOut: DateTime(2025, 10, 10),
     ),
     Reserva(
-      id: 'res3',
+      id: 3,
       idHabitacion: '2',
       nombreUsuario: 'Elvis Presley',
       cedulaUsuario: '87654321',
@@ -113,7 +113,7 @@ class ReservaService implements IReservaService {
 extension ReservaCopyWith on Reserva {
   Reserva copyWith({String? id}) {
     return Reserva(
-      id: id ?? this.id,
+      id: id as int,
       idHabitacion: idHabitacion,
       mailUsuario: mailUsuario,
       cedulaUsuario: cedulaUsuario,

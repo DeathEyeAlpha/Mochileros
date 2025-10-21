@@ -1,6 +1,9 @@
 // lib/screens/admin/crear_habitacion_screen.dart
 
+import 'package:image_picker/image_picker.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
 import '../../models/habitacion.dart';
 import '../../services/interfaces/i_habitacion_service.dart';
 import '../../services/implementacion/habitacion_service.dart';
@@ -13,10 +16,42 @@ class CrearHabitacionScreen extends StatefulWidget {
 }
 
 class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
+  var nombrearchivo = null;
+  final picker = ImagePicker();
+  String? imagenUrl;
+
+  Future<void> subirYGuardar() async {
+    try {
+      //  Elegir imagen
+      final XFile? imagen = await picker.pickImage(source: ImageSource.gallery);
+      if (imagen == null) return;
+
+      final bytes = await imagen.readAsBytes();
+      final fileName =
+          'habitacion_${_tituloController.text}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      nombrearchivo = fileName;
+      // Subir imagen a Supabase Storage
+      await supabase.storage
+          .from('habitaciones_imagenes') // tu bucket
+          .uploadBinary('fotos/$fileName', bytes);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(' Imagen agregada exitosamente'),
+        ),
+      );
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
   //instancia del servicio
   final IHabitacionService _habitacionService = HabitacionService();
   final _formKey = GlobalKey<FormState>();
-  
+
   //controladores y variables de estado
   final _tituloController = TextEditingController();
   final _precioController = TextEditingController();
@@ -26,8 +61,12 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
   int _cantidadTelevisores = 0;
   int _cantidadBanos = 1;
   List<String> _serviciosSeleccionados = [];
-  final List<String> _serviciosDisponibles = ['WiFi', 'Aire Acondicionado', 'Jacuzzi']; // etc.
-  
+  final List<String> _serviciosDisponibles = [
+    'WiFi',
+    'Aire Acondicionado',
+    'Jacuzzi',
+  ]; // etc.
+
   @override
   void dispose() {
     _tituloController.dispose();
@@ -41,7 +80,7 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
     if (_formKey.currentState!.validate()) {
       //creamos un objeto Habitacion con los datos del formulario
       final nuevaHabitacion = Habitacion(
-        id: '', //el ID real será asignado por el servicio
+        numero: 0, //el ID real será asignado por el servicio
         nombre: _tituloController.text,
         precio: double.parse(_precioController.text),
         descripcion: _descripcionController.text,
@@ -50,24 +89,54 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
         televisores: _cantidadTelevisores,
         banos: _cantidadBanos,
         //por ahora una imagen de placeholder, la logica para subir imagenes es mas compleja
-        imagenes: ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800'], 
+        imagenes: ['despues guardo la imagen'],
       );
 
       //llamamos al servicio para crear la habitación
-      final bool exito = await _habitacionService.crearHabitacion(nuevaHabitacion);
+      try {
+        await supabase.from('Habitacion').insert({
+          'Nombre': nuevaHabitacion.nombre,
+          'Precio': nuevaHabitacion.precio,
+          'Descripcion': nuevaHabitacion.descripcion,
+          'Cuartos': nuevaHabitacion.cuartos,
+          'Camas': nuevaHabitacion.camas,
+          'Televisores': nuevaHabitacion.televisores,
+          'Baños': nuevaHabitacion.banos,
+          'Servicios': _serviciosSeleccionados,
+        });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(
-            content: Text(exito ? 'Habitación creada exitosamente' : 'Error al crear la habitación'),
-            backgroundColor: exito ? Colors.green : Colors.red,
-          ),
-        );
+        final urlPublica = supabase.storage
+            .from('habitaciones_imagenes')
+            .getPublicUrl('fotos/$nombrearchivo');
 
-        if (exito) {
-          //si fue exitoso cerramos la pantalla y devolvemos true
-          Navigator.pop(context, true);
+        // Guardar URL en tabla Habitacion
+        await supabase
+            .from('Habitacion')
+            .update({'Imagen': urlPublica})
+            .eq('Nombre', nuevaHabitacion.nombre);
+
+        setState(() {
+          imagenUrl = urlPublica;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Habitación creada exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
         }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al crear la habitación: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
       }
     }
   }
@@ -98,8 +167,10 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       itemCount: _serviciosDisponibles.length,
                       itemBuilder: (context, index) {
                         final servicio = _serviciosDisponibles[index];
-                        final isSelected = _serviciosSeleccionados.contains(servicio);
-                        
+                        final isSelected = _serviciosSeleccionados.contains(
+                          servicio,
+                        );
+
                         return CheckboxListTile(
                           title: Text(servicio),
                           value: isSelected,
@@ -126,9 +197,14 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6B5FB5),
                         padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                      child: const Text('Confirmar', style: TextStyle(fontSize: 16, color: Colors.white)),
+                      child: const Text(
+                        'Confirmar',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -218,7 +294,7 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
     );
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -230,13 +306,13 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
-        title: const Text('Crear Habitación', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500)),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.black), onPressed: () {}),
-        ],
+        title: const Text(
+          'Crear Habitación',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -249,7 +325,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                 label: 'Título',
                 controller: _tituloController,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Por favor ingrese un título';
+                  if (value == null || value.isEmpty)
+                    return 'Por favor ingrese un título';
                   return null;
                 },
               ),
@@ -258,8 +335,10 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                 controller: _precioController,
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Por favor ingrese un precio';
-                  if (double.tryParse(value) == null) return 'Ingrese un número válido';
+                  if (value == null || value.isEmpty)
+                    return 'Por favor ingrese un precio';
+                  if (double.tryParse(value) == null)
+                    return 'Ingrese un número válido';
                   return null;
                 },
               ),
@@ -268,7 +347,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                 controller: _descripcionController,
                 maxLines: 3,
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Por favor ingrese una descripción';
+                  if (value == null || value.isEmpty)
+                    return 'Por favor ingrese una descripción';
                   return null;
                 },
               ),
@@ -280,7 +360,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       label: 'Cuartos',
                       value: _cantidadCuartos,
                       items: List.generate(10, (index) => index + 1),
-                      onChanged: (value) => setState(() => _cantidadCuartos = value!),
+                      onChanged: (value) =>
+                          setState(() => _cantidadCuartos = value!),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -289,7 +370,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       label: 'Televisores',
                       value: _cantidadTelevisores,
                       items: List.generate(11, (index) => index),
-                      onChanged: (value) => setState(() => _cantidadTelevisores = value!),
+                      onChanged: (value) =>
+                          setState(() => _cantidadTelevisores = value!),
                     ),
                   ),
                 ],
@@ -301,7 +383,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       label: 'Camas',
                       value: _cantidadCamas,
                       items: List.generate(20, (index) => index + 1),
-                      onChanged: (value) => setState(() => _cantidadCamas = value!),
+                      onChanged: (value) =>
+                          setState(() => _cantidadCamas = value!),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -310,7 +393,8 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                       label: 'Baños',
                       value: _cantidadBanos,
                       items: List.generate(10, (index) => index + 1),
-                      onChanged: (value) => setState(() => _cantidadBanos = value!),
+                      onChanged: (value) =>
+                          setState(() => _cantidadBanos = value!),
                     ),
                   ),
                 ],
@@ -322,16 +406,48 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _mostrarSelectorServicios,
                     icon: const Icon(Icons.add, color: Colors.white),
-                    label: Text('Servicios ${_serviciosSeleccionados.isNotEmpty ? "(${_serviciosSeleccionados.length})" : ""}', style: const TextStyle(color: Colors.white)),
+                    label: Text(
+                      'Servicios ${_serviciosSeleccionados.isNotEmpty ? "(${_serviciosSeleccionados.length})" : ""}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6B5FB5),
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 20,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16,),
+                child: Center(
+                  
+                  child: SizedBox(
+                    width: 200,
+                    child: ElevatedButton.icon(
+                      onPressed: subirYGuardar,
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: const Text(
+                        'Agregar Imagen',
+                        style: TextStyle(color: Colors.white, fontSize: 15),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B5FB5),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
               //sacamos la fila de botones y dejamos solo uno que ocupa todo el ancho
               SizedBox(
                 width: double.infinity,
@@ -340,12 +456,14 @@ class _CrearHabitacionScreenState extends State<CrearHabitacionScreen> {
                   icon: const Icon(Icons.check, color: Colors.white),
                   label: const Text(
                     'Crear Habitación',
-                    style: TextStyle(color: Colors.white, fontSize: 16)
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B5FB5),
                     padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
               ),

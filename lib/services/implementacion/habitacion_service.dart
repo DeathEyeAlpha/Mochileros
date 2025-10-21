@@ -1,5 +1,7 @@
 // lib/services/habitacion_service.dart
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '/models/habitacion.dart';
 import '/services/interfaces/i_habitacion_service.dart';
 
@@ -9,7 +11,7 @@ class HabitacionService implements IHabitacionService {
   //lista estatica que simula la base de datos en memoria, BORRAR LUEGO
   static final List<Habitacion> _habitaciones = [
     Habitacion(
-      id: '1',
+      numero: 1,
       nombre: 'Habitacion 1',
       reservas: 2,
       imagenes: [
@@ -24,7 +26,7 @@ class HabitacionService implements IHabitacionService {
       descripcion: 'Una habitacion de ensueño para muchos. Equipada con los mejores lujos del mercado. Eso es todo, no hay nada mas que decir :)',
     ),
     Habitacion(
-      id: '2',
+      numero: 2,
       nombre: 'Habitacion 2',
       reservas: 0,
       imagenes: [
@@ -68,7 +70,7 @@ class HabitacionService implements IHabitacionService {
   @override
   Future<bool> eliminarHabitacion(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    _habitaciones.removeWhere((hab) => hab.id == id);
+    _habitaciones.removeWhere((hab) => hab.numero == id);
     return true;
   }
 
@@ -80,7 +82,24 @@ class HabitacionService implements IHabitacionService {
 
   @override
   Future<List<Habitacion>> buscarHabitacionesDisponibles(DateTime fechaIn, DateTime fechaOut) async {
-    throw UnimplementedError();
+     
+     if (fechaIn == null || fechaOut == null) {
+  throw Exception('Las fechas no pueden ser nulas');
+}
+     
+      final response = await Supabase.instance.client.rpc(
+  'habitaciones_disponibles',
+  params: {
+    'fecha_checkin': fechaIn.toString().split(' ')[0],
+    'fecha_checkout': fechaOut.toString().split(' ')[0],
+  },
+);
+
+final List<Habitacion> habitaciones = (response as List<dynamic>)
+      .map((h) => Habitacion.fromJson(h as Map<String, dynamic>))
+      .toList();
+
+  return habitaciones;
   }
 
   @override

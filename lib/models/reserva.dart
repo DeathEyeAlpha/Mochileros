@@ -7,7 +7,7 @@ enum EstadoReserva {
 }
 
 class Reserva {
-  final String id;
+  final int id;
   final String idHabitacion;
   final String mailUsuario;
   final String cedulaUsuario;

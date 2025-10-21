@@ -1,6 +1,10 @@
 // lib/screens/huesped/mis_reservas_screen.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
+import 'package:mochileros/screens/huesped/detalle_reserva_habitacion.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/habitacion.dart';
 import '../../models/reserva.dart';
 import '../../services/interfaces/i_habitacion_service.dart';
@@ -26,12 +30,14 @@ class MisReservasScreen extends StatefulWidget {
 class _MisReservasScreenState extends State<MisReservasScreen> {
   final IReservaService _reservaService = ReservaService();
   final IHabitacionService _habitacionService = HabitacionService();
-  late Future<List<ReservaConHabitacion>> _futureMisReservas;
+  late Future<List<dynamic>> _futureMisReservas;
+  dynamic detalle;
 
   @override
   void initState() {
     super.initState();
     _cargarMisReservas();
+    
   }
 
   void _cargarMisReservas() {
@@ -41,32 +47,29 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
   }
 
   //funcion para obtener los datos combinados de reservas y habitaciones
-  Future<List<ReservaConHabitacion>> _getMisReservas() async {
-    //como no hay login, usamos la cédula de un usuario de prueba BORRAR LUEGO
-    const cedulaUsuarioPrueba = '12345678'; // Cédula de Freddie Mercury
-    
-    //obtenemos las reservas y todas las habitaciones
-    final misReservas = await _reservaService.listarReservasPorUsuario(cedulaUsuarioPrueba);
-    final todasLasHabitaciones = await _habitacionService.listarHabitaciones();
-    
-    final datosCombinados = <ReservaConHabitacion>[];
-    
-    //combinamos los datos
-    for (final reserva in misReservas) {
-      final habitacionCorrespondiente = todasLasHabitaciones.firstWhere(
-        (hab) => hab.id == reserva.idHabitacion,
-      );
-      datosCombinados.add(ReservaConHabitacion(
-        reserva: reserva,
-        habitacion: habitacionCorrespondiente,
-      ));
-    }
-    
-    return datosCombinados;
+  Future<List<dynamic>> _getMisReservas() async {
+    final correo = Supabase.instance.client.auth.currentUser?.email ?? '';
+      final resp = await Supabase.instance.client.rpc(
+  'mis_reservas',
+  params: {
+    'correo': correo,
+  },
+);
+  if (resp == null) return []; 
+detalle = resp;
+return resp;
+
   }
   
-  void _cancelarReserva(String idReserva) async {
-    final bool exito = await _reservaService.cancelarReserva(idReserva);
+  void _cancelarReserva(int idReserva) async {
+    
+    bool exito = false;
+    try{
+    await supabase.from('Reserva').delete().eq('id', idReserva);
+    exito = true;
+    } catch (e) {
+      exito = false;
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -80,7 +83,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     }
   }
 
-  void _mostrarDialogoCancelar(String idReserva, String nombreHabitacion) {
+  void _mostrarDialogoCancelar(int idReserva, String nombreHabitacion) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -115,7 +118,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
         title: const Text('Mis Reservas', style: TextStyle(color: Colors.black)),
         centerTitle: true,
       ),
-      body: FutureBuilder<List<ReservaConHabitacion>>(
+      body: FutureBuilder<List<dynamic>>(
         future: _futureMisReservas,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,7 +144,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     );
   }
 
-  Widget _buildReservaCard(ReservaConHabitacion datos) {
+  Widget _buildReservaCard(dynamic datos) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -151,7 +154,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: Image.network(
-              datos.habitacion.imagenes.first,
+              datos['imagen'],
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -162,15 +165,28 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(datos.habitacion.nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(datos['nombre'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    
+                        Row(
+                          children: [
+                            Text('Checkin: ${datos['checkin']}',style: const TextStyle(fontSize: 16)),
+                            Spacer(),
+                            Text('Checkout: ${datos['checkout']}',style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                     
+                  
+                
                 const SizedBox(height: 16),
+                
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     OutlinedButton.icon(
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(
-                          builder: (context) => DetalleHabitacionHuespedScreen(habitacion: datos.habitacion)
+                          builder: (context) => DetalleReservaHuespedScreen(habitacion: datos)
                         ));
                       },
                       icon: const Icon(Icons.visibility),
@@ -181,7 +197,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => _mostrarDialogoCancelar(datos.reserva.id, datos.habitacion.nombre),
+                      onPressed: () => _mostrarDialogoCancelar(datos['id'], datos['nombre']),
                       icon: const Icon(Icons.cancel, color: Colors.white),
                       label: const Text('Cancelar'),
                       style: ElevatedButton.styleFrom(

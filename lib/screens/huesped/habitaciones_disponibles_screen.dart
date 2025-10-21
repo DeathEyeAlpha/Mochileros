@@ -1,6 +1,10 @@
 // lib/screens/guest/habitaciones_disponibles_screen.dart
 
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
+import 'package:mochileros/main.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/habitacion.dart';
 import '../../models/reserva.dart';
 import '../../services/interfaces/i_habitacion_service.dart';
@@ -28,31 +32,33 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
   final IReservaService _reservaService = ReservaService();
   late Future<List<Habitacion>> _futureHabitacionesDisponibles;
 
-  @override
+   @override
   void initState() {
-    super.initState();
-    _futureHabitacionesDisponibles = _getHabitacionesDisponibles();
+    super.initState(); 
+
+    _futureHabitacionesDisponibles = _getHabitacionesDisponibles(widget.fechaCheckin,widget.fechaCheckout);
   }
 
-  Future<List<Habitacion>> _getHabitacionesDisponibles() async {
-    final todasLasHabitaciones = await _habitacionService.listarHabitaciones();
-    final habitacionesDisponibles = <Habitacion>[];
+  
+  Future<List<Habitacion>> _getHabitacionesDisponibles(fechaCheckin,fechaCheckout) async {
+    final resp = await Supabase.instance.client.rpc(
+  'habitaciones_disponibles',
+  params: {
+    'fecha_checkin': fechaCheckin.toIso8601String(),
+    'fecha_checkout': fechaCheckout.toIso8601String(),
+  },
+);
+  if (resp == null) return []; // evita el null -> Iterable
 
-    for (final habitacion in todasLasHabitaciones) {
-      final hayConflicto = await _reservaService.existeConflictoReserva(
-        habitacion.id,
-        widget.fechaCheckin,
-        widget.fechaCheckout,
-      );
-      if (!hayConflicto) {
-        habitacionesDisponibles.add(habitacion);
-      }
-    }
-    return habitacionesDisponibles;
+final data = resp as List; // ya es una lista de mapas
+final habitaciones = data
+    .map((e) => Habitacion.fromJson(e as Map<String, dynamic>))
+    .toList();
+return habitaciones;
   }
 
   //funcion para navegar a la pantalla de detalle
-  void _verDetalle(Habitacion habitacion) {
+  void _verDetalle(dynamic habitacion) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -62,24 +68,15 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
   }
 
   //funcion para realizar la reserva
-  void _realizarReserva(Habitacion habitacion) async {
-    //CAMBIAR LUEGO, como aun no tenemos un sistema de login real,
-    //usaremos datos de un huesped de prueba para crear la reserva.
-    final nuevaReserva = Reserva(
-      id: '', //el servicio se encargará de esto
-      idHabitacion: habitacion.id,
-      nombreUsuario: 'Franco (Huésped de Prueba)',
-      cedulaUsuario: '1234567-8',
-      mailUsuario: 'franco.huesped@email.com',
-      cantidadHuespedes: 1, //tambien es un dato de prueba
-      fechaIn: widget.fechaCheckin,
-      fechaOut: widget.fechaCheckout,
-    );
-
-    final bool exito = await _reservaService.crearReserva(nuevaReserva);
-
-    if (mounted) {
-      if (exito) {
+  void _realizarReserva(int habitacion,fechaCheckin,fechaCheckout) async {
+    final correo = Supabase.instance.client.auth.currentUser?.email ?? '';
+    try{
+    final response = await supabase.from('Reserva').insert({
+    'Checkin': fechaCheckin.toIso8601String().split('T')[0],
+    'Checkout': fechaCheckout.toIso8601String().split('T')[0],
+    'Correo': correo,
+    'Habitacion': habitacion,
+  });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('¡Reserva creada con éxito!'),
@@ -88,15 +85,16 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
         );
         //despues de reservar, volvemos a la pantalla de inicio
         Navigator.of(context).popUntil((route) => route.isFirst);
-      } else {
+      }catch (e){
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Hubo un error al crear la reserva.'),
+           SnackBar(
+            content: Text('Hubo un error al crear la reserva.$e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    }
+      
+    
   }
 
   //funcion para mostrar el pop-up de confirmación
@@ -117,7 +115,7 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); //cierra el dialogo
-                _realizarReserva(habitacion); //ejecuta la reserva
+                _realizarReserva(habitacion.numero,widget.fechaCheckin,widget.fechaCheckout); //ejecuta la reserva
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
               child: const Text('Confirmar', style: TextStyle(color: Colors.white)),
@@ -147,7 +145,7 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const Center(child: Text('Error al buscar habitaciones.'));
+            return  Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
@@ -171,7 +169,7 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
     );
   }
 
-  Widget _buildHabitacionCard(Habitacion habitacion) {
+  Widget _buildHabitacionCard(dynamic habitacion) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -192,7 +190,20 @@ class _HabitacionesDisponiblesScreenState extends State<HabitacionesDisponiblesS
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(habitacion.nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    Text(habitacion.nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Spacer(),
+                    Text(
+                        '\$${habitacion.precio.toStringAsFixed(2)} USD',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
