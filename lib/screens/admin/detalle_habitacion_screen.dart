@@ -26,6 +26,10 @@ class _DetalleHabitacionScreenState extends State<DetalleHabitacionScreen> {
     final cuartos = widget.habitacion['Cuartos'] ?? 0;
     final camas = widget.habitacion['Camas'] ?? 0;
     final banos = widget.habitacion['Baños'] ?? 0;
+    final televisores = widget.habitacion['Televisores'] ?? 0;
+    final servicios = widget.habitacion['Servicios'] ?? ''; // "{Aire Acondicionado,Jacuzzi}"
+    
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6FB),
@@ -116,10 +120,34 @@ class _DetalleHabitacionScreenState extends State<DetalleHabitacionScreen> {
                 _buildDetailIcon(Icons.meeting_room, 'Cuartos', cuartos),
                 _buildDetailIcon(Icons.bed, 'Camas', camas),
                 _buildDetailIcon(Icons.bathtub, 'Baños', banos),
+                _buildDetailIcon(Icons.tv, 'Televisores', televisores),
+                
+                
               ],
             ),
             const SizedBox(height: 30),
-
+            Text(
+              'Servicios incluidos',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: servicios.map<Widget>((servicio) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.check, color: Colors.green, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            servicio,
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }).toList(),
+)
             
           ],
         ),

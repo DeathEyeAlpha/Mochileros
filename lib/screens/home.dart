@@ -76,6 +76,7 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    Future.delayed(Duration(seconds: 10));
    if (admin && logueado) {
     Future.microtask(() {
       Navigator.of(context).pushReplacement(
